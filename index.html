@@ -183,7 +183,7 @@
             <h2>Por Que Isso Importa Agora</h2>
             <p>Até aqui, cada módulo do curso viveu em um projeto pequeno e isolado: o Pokédex, a Biblioteca em SQLite, a Biblioteca em Room, o HabitTracker. Em projetos desse tamanho, dá pra sobreviver com tudo meio solto dentro de um único pacote <code>ui</code> — o projeto é pequeno o bastante pra você guardar a estrutura inteira na cabeça.</p>
             <p>Isso muda a partir de agora. O <strong>Projeto Final</strong> vai unir, num único app, tudo que foi ensinado neste ano: consumo de API, persistência local, navegação com múltiplas telas. Um projeto desse tamanho sem organização em camadas vira, rapidamente, um arquivo gigante onde ninguém — nem você, nem um colega de equipe — sabe onde mexer sem quebrar outra coisa. Esta aula não ensina um conceito novo de Android: ensina a <strong>organizar</strong> o que vocês já sabem fazer, da forma como times profissionais organizam.</p>
-            <div class="tip-box"><strong>Por que isso importa pra sua carreira:</strong> em qualquer entrevista técnica ou revisão de código (<em>code review</em>) profissional, a primeira pergunta sobre um projeto Android não é "funciona?" — é "onde fica a lógica de rede?", "onde fica o acesso ao banco?". Um projeto com camadas bem definidas responde essas perguntas em segundos. Um projeto sem camadas exige ler o código inteiro pra descobrir.</p>
+            <div class="tip-box"><strong>Por que isso importa pra sua carreira:</strong> em qualquer entrevista técnica ou revisão de código (<em>code review</em>) profissional, a primeira pergunta sobre um projeto Android não é "funciona?" — é "onde fica a lógica de rede?", "onde fica o acesso ao banco?". Um projeto com camadas bem definidas responde essas perguntas em segundos. Um projeto sem camadas exige ler o código inteiro pra descobrir.</div>
         </section>
 
         <section id="camadas" class="acc-arch">
@@ -218,7 +218,7 @@
 
             <p>Na prática: <code>PokedexScreen.kt</code> (userinterface) pode importar <code>PokedexViewModel</code> — ele chama funções dele e lê seu estado. Mas <code>PokedexViewModel.kt</code> <strong>nunca</strong> deveria importar nada de <code>androidx.compose.material3</code> ou conhecer um <code>Color</code> de tela: se o ViewModel sabe desenhar algo, ele deixou de ser "estado" para virar "interface", e a separação quebrou. Essa é a versão enxuta — sem a cerimônia de interfaces e módulos Gradle separados — da <strong>Clean Architecture</strong>, a arquitetura mais citada em vagas de Android sênior: lá o princípio tem nome (<em>Dependency Rule</em>) e é aplicado com muito mais rigor, mas a ideia de fundo é exatamente essa seta de mão única.</p>
 
-            <div class="warn-box"><strong>Sinal de alerta:</strong> se, ao organizar seu projeto, você perceber que o <code>ViewModel</code> precisa importar algo de <code>userinterface</code> para funcionar, isso quase sempre indica que uma decisão que deveria estar no ViewModel foi colocada na tela (ou vice-versa). É um bom momento para parar e perguntar: "de quem é essa responsabilidade?"</p>
+            <div class="warn-box"><strong>Sinal de alerta:</strong> se, ao organizar seu projeto, você perceber que o <code>ViewModel</code> precisa importar algo de <code>userinterface</code> para funcionar, isso quase sempre indica que uma decisão que deveria estar no ViewModel foi colocada na tela (ou vice-versa). É um bom momento para parar e perguntar: "de quem é essa responsabilidade?"</div>
         </section>
 
         <section id="refatoracao" class="acc-ok">
@@ -234,7 +234,7 @@
             <div class="step-box">
                 <h3>Passo 2 — Mover os arquivos de rede <span class="step-progress">2/6</span></h3>
                 <p>Arraste <code>PokemonApi.kt</code> e <code>RetrofitInstance.kt</code> para dentro de <code>network</code>, diretamente na árvore de arquivos (não copie e cole o texto).</p>
-                <div class="tip-box"><strong>Por que arrastar, e não recriar:</strong> quando você arrasta um arquivo no Project do Android Studio, a IDE atualiza sozinha a linha <code>package</code> no topo do arquivo <strong>e</strong> todos os imports que apontavam pra ele, em todo o projeto. Recriar o arquivo manualmente em outro lugar perde esse ajuste automático.</p>
+                <div class="tip-box"><strong>Por que arrastar, e não recriar:</strong> quando você arrasta um arquivo no Project do Android Studio, a IDE atualiza sozinha a linha <code>package</code> no topo do arquivo <strong>e</strong> todos os imports que apontavam pra ele, em todo o projeto. Recriar o arquivo manualmente em outro lugar perde esse ajuste automático.</div>
             </div>
 
             <div class="step-box">
