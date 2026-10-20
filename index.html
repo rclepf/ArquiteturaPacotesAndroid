@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arquitetura e Organização em Pacotes</title>
+    <style>
+        :root {
+            --ink: #14171C;
+            --ink-soft: #1F242C;
+            --ink-line: #2B313B;
+            --bg: #EEF1F5;
+            --surface: #FFFFFF;
+            --line: #E2E6EB;
+            --text: #1B1E23;
+            --text-muted: #5B6470;
+            --api-color: #2D6A4F;
+            --arch-color: #2F6FED;
+            --async-color: #0D9488;
+            --fix-color: #C97A0F;
+            --code-bg: #0F1115;
+            --code-text: #D6DEE7;
+            --code-comment: #7A9F6E;
+            --focus-ring: #2F6FED;
+            --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: var(--font-sans); line-height: 1.6; margin: 0; padding: 0; background-color: var(--bg); color: var(--text); }
+        a:focus-visible, button:focus-visible, .step-nav-link:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+        .kw-arch { color: var(--arch-color); font-weight: 700; }
+        .kw-fix { color: var(--fix-color); font-weight: 700; }
+        .kw-ok { color: var(--api-color); font-weight: 700; }
+        strong { color: #000000; font-weight: 700; }
+        code { font-family: var(--font-mono); background: #E7EAEF; padding: 1px 6px; border-radius: 4px; font-size: 0.88em; }
+        pre code { background: none; padding: 0; border-radius: 0; font-size: inherit; color: inherit; }
+
+        header { background: var(--ink); padding: 3rem 1.2rem 2.6rem; }
+        .editor-window { max-width: 720px; margin: 0 auto; background: var(--ink-soft); border-radius: 10px; border: 1px solid var(--ink-line); overflow: hidden; }
+        .editor-titlebar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #101317; border-bottom: 1px solid var(--ink-line); }
+        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .dot.d-arch { background: var(--arch-color); }
+        .dot.d-fix { background: var(--fix-color); }
+        .dot.d-ok { background: var(--api-color); }
+        .editor-titlebar .filename { margin-left: 8px; font-family: var(--font-mono); font-size: 0.8rem; color: #7D8590; }
+        .editor-body { padding: 2.2rem 2rem 2.4rem; text-align: left; }
+        .editor-body .comment-line { font-family: var(--font-mono); font-size: 0.85rem; color: var(--code-comment); margin: 0 0 1rem 0; }
+        header h1 { margin: 0; font-size: 2.1rem; letter-spacing: -0.5px; font-weight: 700; color: #EDEFF2; transform: translateZ(0); }
+        header p.subtitle { font-size: 1.05rem; color: #AEB6C2; margin: 0.7rem 0 0 0; max-width: 56ch; }
+
+        nav { background: var(--ink); padding: 0.7rem 1rem; position: sticky; top: 0; border-bottom: 1px solid var(--ink-line); z-index: 100; }
+        .nav-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: nowrap; gap: 1rem; }
+        .nav-brand { font-family: var(--font-mono); font-weight: 600; color: #7D8590; font-size: 0.85rem; white-space: nowrap; padding-top: 0.5rem; margin-right: 0.4rem; }
+        .nav-links { display: flex; flex-wrap: nowrap; justify-content: flex-end; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+        .nav-links::-webkit-scrollbar { display: none; }
+        nav a.step-nav-link { display: inline-flex; align-items: center; gap: 6px; color: #C7CDD6; text-decoration: none; font-weight: 600; font-size: 0.84rem; white-space: nowrap; padding: 0.5rem 0.6rem; border-radius: 6px; transition: all 0.15s ease; border-bottom: 2px solid transparent; }
+        nav a.step-nav-link .nav-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: 0.6; }
+        nav a.step-nav-link:hover { color: #FFFFFF; background: rgba(255,255,255,0.06); }
+        nav a.step-nav-link.active { color: #FFFFFF; border-bottom-color: currentColor; }
+        nav a.step-nav-link.active .nav-dot { opacity: 1; }
+        .nav-toggle { display: none; background: none; border: 1px solid var(--ink-line); color: #C7CDD6; border-radius: 6px; padding: 0.4rem 0.6rem; font-size: 1rem; cursor: pointer; font-family: var(--font-sans); }
+
+        main { max-width: 980px; margin: 2.2rem auto; padding: 0 1.5rem; }
+        section { background: var(--surface); padding: 2.3rem 2.3rem 2.3rem 2rem; border-radius: 8px; margin-bottom: 1.6rem; border: 1px solid var(--line); border-left: 4px solid var(--text-muted); scroll-margin-top: 76px; }
+        section.acc-arch { border-left-color: var(--arch-color); }
+        section.acc-ok { border-left-color: var(--api-color); }
+        section.acc-fix { border-left-color: var(--fix-color); }
+        section.acc-neutral { border-left-color: #A9B1BC; }
+
+        .file-tag { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+        h2 { font-size: 1.55rem; color: #14171C; margin-top: 0; margin-bottom: 1.3rem; font-weight: 700; letter-spacing: -0.3px; }
+        h3 { font-size: 1.18rem; color: #2A2E34; margin-top: 1.7rem; font-weight: 700; }
+        p, li { max-width: none; }
+
+        .flow-diagram { display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin: 1.8rem 0; padding: 1.5rem; background: #F7F9FC; border-radius: 10px; border: 1px solid var(--line); }
+        .flow-box { padding: 0.9rem 1.1rem; border-radius: 8px; font-weight: 700; font-size: 0.88rem; text-align: center; min-width: 110px; border: 1px solid; }
+        .flow-box.a { background: #EAF1FE; color: var(--arch-color); border-color: #C9DBFB; }
+        .flow-box.b { background: #E6F5EF; color: var(--api-color); border-color: #BFE3D4; }
+        .flow-box.c { background: #FDF3E7; color: var(--fix-color); border-color: #F2DBB4; }
+        .flow-arrow { font-size: 1.3rem; color: var(--text-muted); font-weight: 700; }
+        .flow-caption { width: 100%; text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-top: 0.6rem; }
+
+        .data-table { width: 100%; border-collapse: collapse; margin: 1.2rem 0; font-size: 0.92rem; }
+        .data-table th, .data-table td { border: 1px solid var(--line); padding: 0.7rem 0.9rem; text-align: left; vertical-align: top; }
+        .data-table th { background: #F7F9FC; color: var(--arch-color); font-weight: 700; }
+
+        .code-container { position: relative; margin: 1.5rem 0; border-radius: 8px; overflow: hidden; }
+        .code-header { background-color: #171A1F; color: #8A93A0; padding: 0.55rem 0.9rem; font-family: var(--font-mono); font-size: 0.82rem; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .code-header .dots { display: flex; gap: 5px; }
+        .code-header .dots .dot { width: 8px; height: 8px; }
+        .code-header .fname { flex: 1; }
+        .copy-btn { background: #262B33; color: #D6DEE7; border: none; border-radius: 5px; padding: 0.25rem 0.6rem; font-size: 0.76rem; cursor: pointer; font-family: var(--font-sans); transition: background 0.15s ease; }
+        .copy-btn:hover { background: #333A44; }
+        pre { background-color: var(--code-bg); color: var(--code-text); padding: 1.4rem 1.5rem; margin: 0; overflow-x: auto; font-family: var(--font-mono); font-size: 0.85rem; }
+
+        ul { padding-left: 1.2rem; }
+        li { margin-bottom: 0.6rem; }
+
+        .step-box { background-color: #FAFBFC; border: 1px solid var(--line); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.8rem; scroll-margin-top: 76px; }
+        .step-box h3 { margin-top: 0; color: var(--text); display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.4rem; }
+        .step-progress { font-family: var(--font-mono); font-size: 0.74rem; font-weight: 600; color: var(--text-muted); background: #EEF1F5; padding: 0.2rem 0.6rem; border-radius: 4px; }
+
+        .tree-box { background: #FAFBFC; border: 1px solid var(--line); border-radius: 8px; padding: 1.3rem 1.5rem; margin: 1.2rem 0; }
+        .tree-box .tree-title { font-weight: 700; font-size: 0.92rem; margin-bottom: 0.8rem; color: var(--text); }
+        .tree-pre { background-color: var(--code-bg); color: var(--code-text); padding: 1.2rem 1.4rem; border-radius: 8px; margin: 0; overflow-x: auto; font-family: var(--font-mono); font-size: 0.84rem; line-height: 1.6; }
+
+        .checklist { background: #F3F9F6; border: 1px solid #CDE9DE; border-left: 4px solid var(--api-color); border-radius: 8px; padding: 1.5rem 1.8rem; margin-top: 1.5rem; }
+        .checklist h3 { color: #0D7A5F; margin-top: 0; }
+        .checklist ul { list-style: none; padding-left: 0; }
+        .checklist li { padding-left: 1.8rem; position: relative; }
+        .checklist li::before { content: "✓"; position: absolute; left: 0; color: #0D7A5F; font-weight: 700; }
+
+        .tip-box { background: #EAF1FE; border-left: 4px solid var(--arch-color); padding: 1rem 1.3rem; border-radius: 6px; margin: 1.2rem 0; font-size: 0.95rem; }
+        .tip-box strong { color: #14458C; }
+        .warn-box { background: #FDECEA; border-left: 4px solid #C0392B; padding: 1rem 1.3rem; border-radius: 6px; margin: 1.2rem 0; font-size: 0.95rem; }
+        .warn-box strong { color: #A31D03; }
+
+        .erro-item { border: 1px solid var(--line); border-radius: 8px; margin-bottom: 1.2rem; overflow: hidden; }
+        .erro-titulo { background: #FDECEA; padding: 0.8rem 1.1rem; font-family: var(--font-mono); font-size: 0.85rem; color: #A31D03; font-weight: 700; border-bottom: 1px solid var(--line); }
+        .erro-corpo { padding: 1.1rem 1.3rem; font-size: 0.95rem; }
+        .erro-corpo p { margin-top: 0; }
+        .erro-corpo p:last-child { margin-bottom: 0; }
+
+        .terminal-window { background: var(--ink-soft); border-radius: 10px; border: 1px solid var(--ink-line); overflow: hidden; }
+        .terminal-titlebar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #101317; border-bottom: 1px solid var(--ink-line); }
+        .terminal-titlebar .filename { margin-left: 8px; font-family: var(--font-mono); font-size: 0.8rem; color: #7D8590; }
+        .terminal-body { padding: 2rem 2.2rem 2.3rem; font-family: var(--font-mono); }
+        .term-line { color: #9AA4B2; margin: 0 0 0.4rem 0; font-size: 0.92rem; }
+        .term-prompt { color: var(--api-color); font-weight: 700; margin-right: 8px; }
+        .term-output { color: #C7CDD6; font-family: var(--font-sans); font-size: 0.95rem; line-height: 1.6; margin: 0.6rem 0 1.6rem 0; }
+        .term-cta { display: inline-flex; align-items: center; gap: 8px; color: var(--api-color); text-decoration: none; font-weight: 700; font-size: 1rem; padding: 0.5rem 0; border-bottom: 1px solid transparent; }
+        .term-cta:hover { border-bottom-color: var(--api-color); }
+        .cta-meta { margin-top: 1rem; font-size: 0.85rem; color: #7D8590; font-family: var(--font-sans); }
+
+        footer { text-align: center; padding: 2.6rem; background: var(--ink); color: #7D8590; font-size: 0.88rem; }
+        .cta-section { border: none; padding: 0; background: transparent; }
+
+        @media (max-width: 860px) {
+            header h1 { font-size: 1.6rem; }
+            .nav-toggle { display: inline-flex; }
+            .nav-links { display: none; width: 100%; flex-direction: column; align-items: stretch; overflow-x: visible; margin-top: 0.6rem; }
+            .nav-links.open { display: flex; }
+            .nav-inner { flex-wrap: wrap; gap: 0.4rem; }
+            .nav-brand { padding-top: 0; }
+            section { padding: 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="editor-window">
+            <div class="editor-titlebar">
+                <span class="dot d-arch"></span><span class="dot d-fix"></span><span class="dot d-ok"></span>
+                <span class="filename">pokedexnovo/reorganizacao.md</span>
+            </div>
+            <div class="editor-body">
+                <p class="comment-line">// guia de aula — Arquitetura em Camadas e Organização em Pacotes</p>
+                <h1>Arquitetura e Organização em Pacotes</h1>
+                <p class="subtitle">Pegando um projeto que já funciona e separando-o em camadas de verdade — o primeiro passo antes de começar o Projeto Final.</p>
+            </div>
+        </div>
+    </header>
+
+    <nav>
+        <div class="nav-inner">
+            <span class="nav-brand">arquitetura/</span>
+            <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navLinks">Menu</button>
+            <div class="nav-links" id="navLinks">
+                <a class="step-nav-link" href="#intro"><span class="nav-dot"></span>Por Quê</a>
+                <a class="step-nav-link" href="#camadas"><span class="nav-dot"></span>As Camadas</a>
+                <a class="step-nav-link" href="#refatoracao"><span class="nav-dot"></span>Refatoração</a>
+                <a class="step-nav-link" href="#mapeamento"><span class="nav-dot"></span>Mapa Final</a>
+                <a class="step-nav-link" href="#erros"><span class="nav-dot"></span>Erros Comuns</a>
+                <a class="step-nav-link" href="#atividade-cta"><span class="nav-dot"></span>Atividade</a>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+
+        <section id="intro" class="acc-neutral">
+            <div class="file-tag">00_contexto.md</div>
+            <h2>Por Que Isso Importa Agora</h2>
+            <p>Até aqui, cada módulo do curso viveu em um projeto pequeno e isolado: o Pokédex, a Biblioteca em SQLite, a Biblioteca em Room, o HabitTracker. Em projetos desse tamanho, dá pra sobreviver com tudo meio solto dentro de um único pacote <code>ui</code> — o projeto é pequeno o bastante pra você guardar a estrutura inteira na cabeça.</p>
+            <p>Isso muda a partir de agora. O <strong>Projeto Final</strong> vai unir, num único app, tudo que foi ensinado neste ano: consumo de API, persistência local, navegação com múltiplas telas. Um projeto desse tamanho sem organização em camadas vira, rapidamente, um arquivo gigante onde ninguém — nem você, nem um colega de equipe — sabe onde mexer sem quebrar outra coisa. Esta aula não ensina um conceito novo de Android: ensina a <strong>organizar</strong> o que vocês já sabem fazer, da forma como times profissionais organizam.</p>
+            <div class="tip-box"><strong>Por que isso importa pra sua carreira:</strong> em qualquer entrevista técnica ou revisão de código (<em>code review</em>) profissional, a primeira pergunta sobre um projeto Android não é "funciona?" — é "onde fica a lógica de rede?", "onde fica o acesso ao banco?". Um projeto com camadas bem definidas responde essas perguntas em segundos. Um projeto sem camadas exige ler o código inteiro pra descobrir.</p>
+        </section>
+
+        <section id="camadas" class="acc-arch">
+            <div class="file-tag">01_camadas.md</div>
+            <h2>As Camadas e a Regra de Dependência</h2>
+
+            <h3>Separação de responsabilidades (Separation of Concerns)</h3>
+            <p>A ideia central é simples de enunciar e difícil de manter na prática: <strong>cada arquivo tem um único motivo para mudar</strong>. Se a URL base da API mudou, só um arquivo deveria precisar de edição. Se o layout de uma tela mudou, só um arquivo (de UI) deveria ser tocado. Quando essas responsabilidades se misturam — uma função <code>@Composable</code> que também faz a chamada de rede, por exemplo — qualquer mudança pequena arrisca quebrar outra coisa, porque as responsabilidades estão entrelaçadas.</p>
+            <p>No seu projeto, essas responsabilidades já existem — só não estão separadas em pastas. Vocês vão reorganizar o código em quatro pacotes:</p>
+
+            <table class="data-table">
+                <thead><tr><th>Pacote</th><th>Responsabilidade</th><th>Exemplos</th></tr></thead>
+                <tbody>
+                    <tr><td><code>network</code></td><td>Conversa com a internet. Define <em>o que</em> pode ser pedido a uma API.</td><td><code>PokemonApi.kt</code>, <code>RetrofitInstance.kt</code></td></tr>
+                    <tr><td><code>data</code></td><td>Formato dos dados. Classes que representam a informação, local ou remota.</td><td><code>Pokemon.kt</code>, entidades <code>@Entity</code>, DAOs <code>@Dao</code></td></tr>
+                    <tr><td><code>viewmodel</code></td><td>Estado e regras da tela. Decide <em>quando</em> buscar dados e o que a UI deve mostrar.</td><td><code>PokedexViewModel.kt</code></td></tr>
+                    <tr><td><code>userinterface</code></td><td>O que o usuário vê e toca. Só desenha — nunca decide regra de negócio.</td><td><code>PokedexScreen.kt</code></td></tr>
+                </tbody>
+            </table>
+
+            <h3>A Regra de Dependência: a seta só anda numa direção</h3>
+            <p>Separar em pastas resolve metade do problema. A outra metade é uma regra que não aparece em lugar nenhum do código, mas que todo projeto profissional segue: <strong>uma camada só pode conhecer a camada logo abaixo dela nesta ordem — nunca o contrário.</strong></p>
+
+            <div class="flow-diagram">
+                <div class="flow-box c">userinterface</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-box a">viewmodel</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-box b">network / data</div>
+                <div class="flow-caption">A seta aponta "quem depende de quem". A UI conhece o ViewModel; o ViewModel conhece a API e os dados. O caminho inverso nunca deveria existir.</div>
+            </div>
+
+            <p>Na prática: <code>PokedexScreen.kt</code> (userinterface) pode importar <code>PokedexViewModel</code> — ele chama funções dele e lê seu estado. Mas <code>PokedexViewModel.kt</code> <strong>nunca</strong> deveria importar nada de <code>androidx.compose.material3</code> ou conhecer um <code>Color</code> de tela: se o ViewModel sabe desenhar algo, ele deixou de ser "estado" para virar "interface", e a separação quebrou. Essa é a versão enxuta — sem a cerimônia de interfaces e módulos Gradle separados — da <strong>Clean Architecture</strong>, a arquitetura mais citada em vagas de Android sênior: lá o princípio tem nome (<em>Dependency Rule</em>) e é aplicado com muito mais rigor, mas a ideia de fundo é exatamente essa seta de mão única.</p>
+
+            <div class="warn-box"><strong>Sinal de alerta:</strong> se, ao organizar seu projeto, você perceber que o <code>ViewModel</code> precisa importar algo de <code>userinterface</code> para funcionar, isso quase sempre indica que uma decisão que deveria estar no ViewModel foi colocada na tela (ou vice-versa). É um bom momento para parar e perguntar: "de quem é essa responsabilidade?"</p>
+        </section>
+
+        <section id="refatoracao" class="acc-ok">
+            <div class="file-tag">02_refatoracao.md</div>
+            <h2>Live Coding: Reorganizando o Pokédex</h2>
+            <p>Vamos pegar o projeto Pokédex — que hoje tem tudo misturado dentro de <code>com.rclepf.pokedexnovo.ui</code> — e separá-lo nas quatro camadas. O mesmo procedimento se aplica a qualquer projeto do curso.</p>
+
+            <div class="step-box">
+                <h3>Passo 1 — Criar as pastas <span class="step-progress">1/6</span></h3>
+                <p>No <strong>Project</strong> (lateral esquerda do Android Studio, certifique-se de estar na visão <em>Android</em>), clique com o botão direito no pacote <code>com.rclepf.pokedexnovo</code> → <strong>New → Package</strong>. Crie quatro pacotes: <code>network</code>, <code>data</code>, <code>viewmodel</code> e <code>userinterface</code> (esse último talvez já exista, se você seguiu o módulo da Pokédex).</p>
+            </div>
+
+            <div class="step-box">
+                <h3>Passo 2 — Mover os arquivos de rede <span class="step-progress">2/6</span></h3>
+                <p>Arraste <code>PokemonApi.kt</code> e <code>RetrofitInstance.kt</code> para dentro de <code>network</code>, diretamente na árvore de arquivos (não copie e cole o texto).</p>
+                <div class="tip-box"><strong>Por que arrastar, e não recriar:</strong> quando você arrasta um arquivo no Project do Android Studio, a IDE atualiza sozinha a linha <code>package</code> no topo do arquivo <strong>e</strong> todos os imports que apontavam pra ele, em todo o projeto. Recriar o arquivo manualmente em outro lugar perde esse ajuste automático.</p>
+            </div>
+
+            <div class="step-box">
+                <h3>Passo 3 — Mover os modelos de dados <span class="step-progress">3/6</span></h3>
+                <p>Arraste <code>Pokemon.kt</code> (as <code>data class</code> que representam o JSON da API) para dentro de <code>data</code>.</p>
+            </div>
+
+            <div class="step-box">
+                <h3>Passo 4 — Mover o ViewModel <span class="step-progress">4/6</span></h3>
+                <p>Arraste <code>PokedexViewModel.kt</code> para dentro de <code>viewmodel</code>.</p>
+            </div>
+
+            <div class="step-box">
+                <h3>Passo 5 — Confirmar a UI <span class="step-progress">5/6</span></h3>
+                <p><code>PokedexScreen.kt</code> já deveria estar em <code>userinterface</code>, se vocês seguiram o módulo original do Pokédex. Se não estiver, mova-o para lá agora.</p>
+            </div>
+
+            <div class="step-box">
+                <h3>Passo 6 — Rodar e confirmar <span class="step-progress">6/6</span></h3>
+                <p>Rode o app de novo (▶ Run). Se tudo foi movido por arrastar (e não por copiar/colar texto), o projeto deve compilar e rodar exatamente como antes — a reorganização não muda nenhum comportamento, só a estrutura.</p>
+                <div class="warn-box"><strong>Se der erro de "Unresolved reference" após mover:</strong> normalmente é um import que não foi atualizado automaticamente. Veja a seção Erros Comuns abaixo.</div>
+            </div>
+        </section>
+
+        <section id="mapeamento" class="acc-neutral">
+            <div class="file-tag">03_mapa.md</div>
+            <h2>Mapa de Pastas Final</h2>
+            <p>É assim que o Pokédex (e, depois, o Projeto Final) deve ficar organizado:</p>
+            <div class="tree-box">
+                <div class="tree-title">🗂️ com.rclepf.pokedexnovo</div>
+<pre class="tree-pre">com.rclepf.pokedexnovo/
+├── network/
+│   ├── PokemonApi.kt          ← interface Retrofit (@GET, @Path)
+│   └── RetrofitInstance.kt    ← configuração do cliente HTTP
+├── data/
+│   └── Pokemon.kt             ← data class do modelo (JSON)
+├── viewmodel/
+│   └── PokedexViewModel.kt    ← estado da tela + chamadas suspend
+├── userinterface/
+│   ├── PokedexScreen.kt       ← Composables
+│   └── theme/                 ← Color.kt, Theme.kt, Type.kt
+└── MainActivity.kt            ← só hospeda o NavHost/Theme</pre>
+            </div>
+            <p>Em um projeto com Room (como a Biblioteca evoluída), o pacote <code>data</code> cresce um pouco mais: <code>Habito.kt</code> (@Entity), <code>HabitoDao.kt</code> (@Dao) e a classe <code>@Database</code> moram todos ali, porque todos descrevem "o formato e o acesso aos dados" — só que agora olhando para o banco local, não para a API.</p>
+        </section>
+
+        <section id="erros" class="acc-fix">
+            <div class="file-tag">99_erros_comuns.md</div>
+            <h2>Erros Comuns</h2>
+
+            <div class="erro-item">
+                <div class="erro-titulo">e: Unresolved reference 'PokedexViewModel' (ou qualquer classe movida)</div>
+                <div class="erro-corpo">
+                    <p><strong>Causa:</strong> o arquivo foi movido copiando o texto para um arquivo novo, em vez de ser arrastado na árvore do Project — isso não atualiza os imports nos outros arquivos que o usam.</p>
+                    <p><strong>Solução:</strong> clique no import com erro (sublinhado vermelho) e aperte <strong>Alt+Enter</strong> (Windows/Linux) ou <strong>Option+Enter</strong> (Mac) → "Import". O Android Studio preenche o import correto automaticamente, desde que o arquivo exista no pacote certo.</p>
+                </div>
+            </div>
+
+            <div class="erro-item">
+                <div class="erro-titulo">As pastas "network", "data" etc. não aparecem separadas no Project — tudo parece estar junto</div>
+                <div class="erro-corpo">
+                    <p><strong>Causa:</strong> o Android Studio tem uma opção chamada <strong>"Compact Middle Packages"</strong> ativada por padrão, que junta visualmente pacotes com um único filho numa única linha (ex: <code>com.rclepf.pokedexnovo</code> aparece como uma linha só).</p>
+                    <p><strong>Solução:</strong> clique no ícone de engrenagem no topo do painel Project → desmarque <strong>"Compact Middle Packages"</strong>. Cada pacote passa a aparecer em sua própria linha, com indentação — mais fácil de visualizar a estrutura em árvore.</p>
+                </div>
+            </div>
+
+            <div class="erro-item">
+                <div class="erro-titulo">package com.rclepf.pokedexnovo.ui não corresponde à pasta do arquivo</div>
+                <div class="erro-corpo">
+                    <p><strong>Causa:</strong> o arquivo foi movido pelo sistema operacional (fora do Android Studio) ou colado manualmente, então a linha <code>package</code> no topo do arquivo ficou desatualizada em relação à pasta onde ele está agora.</p>
+                    <p><strong>Solução:</strong> edite manualmente a primeira linha do arquivo para refletir a pasta correta (ex: <code>package com.rclepf.pokedexnovo.viewmodel</code>), e ajuste os imports nos arquivos que o referenciam.</p>
+                </div>
+            </div>
+
+            <div class="erro-item">
+                <div class="erro-titulo">O ViewModel "precisa" importar algo de Compose pra funcionar</div>
+                <div class="erro-corpo">
+                    <p><strong>Causa:</strong> alguma decisão visual (uma cor, um texto formatado, um ícone) foi colocada no ViewModel em vez de na tela — sintoma de que a Regra de Dependência foi quebrada.</p>
+                    <p><strong>Solução:</strong> mova a decisão visual para <code>userinterface</code>. O ViewModel deve expor apenas dados "crus" (ex: um <code>Int</code>, um <code>Boolean</code>, um <code>enum</code> de estado) — quem decide como isso vira cor, ícone ou texto na tela é sempre a camada de UI.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="atividade-cta" class="cta-section">
+            <div class="terminal-window">
+                <div class="terminal-titlebar">
+                    <span class="dot d-arch"></span><span class="dot d-fix"></span><span class="dot d-ok"></span>
+                    <span class="filename">~/proxima-missao</span>
+                </div>
+                <div class="terminal-body">
+                    <p class="term-line"><span class="term-prompt">$</span> cat proxima_missao.md</p>
+                    <p class="term-output">Reorganizem um projeto já existente (Pokédex, Biblioteca ou HabitTracker) nas quatro camadas. É a mesma estrutura que vocês vão usar no Projeto Final — tratem esta atividade como o ensaio geral.</p>
+                    <p class="term-line"><span class="term-prompt">$</span></p>
+                    <a class="term-cta" href="Atividade_Arquitetura_Pacotes.pdf" download>./baixar-atividade.pdf ↵</a>
+                    <p class="cta-meta">O PDF contém a missão completa, os requisitos obrigatórios e a rubrica de correção.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        Desenvolvimento Android Moderno &copy; 2026 · Arquitetura em Camadas e Organização em Pacotes
+    </footer>
+
+    <script>
+        function copyCode(btn) {
+            const pre = btn.closest('.code-container').querySelector('pre');
+            navigator.clipboard.writeText(pre.innerText).then(() => {
+                const original = btn.textContent;
+                btn.textContent = 'Copiado!';
+                setTimeout(() => { btn.textContent = original; }, 1500);
+            });
+        }
+        const navToggle = document.getElementById('navToggle');
+        const navLinks = document.getElementById('navLinks');
+        navToggle.addEventListener('click', () => {
+            const isOpen = navLinks.classList.toggle('open');
+            navToggle.setAttribute('aria-expanded', isOpen);
+        });
+        const sections = document.querySelectorAll('main > section');
+        const links = document.querySelectorAll('.step-nav-link');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    links.forEach(link => {
+                        link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+                    });
+                }
+            });
+        }, { rootMargin: '-45% 0px -50% 0px' });
+        sections.forEach(sec => observer.observe(sec));
+    </script>
+
+</body>
+</html>
