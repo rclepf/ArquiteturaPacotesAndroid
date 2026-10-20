@@ -172,7 +172,6 @@
                 <a class="step-nav-link" href="#refatoracao"><span class="nav-dot"></span>Refatoração</a>
                 <a class="step-nav-link" href="#mapeamento"><span class="nav-dot"></span>Mapa Final</a>
                 <a class="step-nav-link" href="#erros"><span class="nav-dot"></span>Erros Comuns</a>
-                <a class="step-nav-link" href="#atividade-cta"><span class="nav-dot"></span>Atividade</a>
             </div>
         </div>
     </nav>
@@ -315,22 +314,6 @@
                 <div class="erro-corpo">
                     <p><strong>Causa:</strong> alguma decisão visual (uma cor, um texto formatado, um ícone) foi colocada no ViewModel em vez de na tela — sintoma de que a Regra de Dependência foi quebrada.</p>
                     <p><strong>Solução:</strong> mova a decisão visual para <code>userinterface</code>. O ViewModel deve expor apenas dados "crus" (ex: um <code>Int</code>, um <code>Boolean</code>, um <code>enum</code> de estado) — quem decide como isso vira cor, ícone ou texto na tela é sempre a camada de UI.</p>
-                </div>
-            </div>
-        </section>
-
-        <section id="atividade-cta" class="cta-section">
-            <div class="terminal-window">
-                <div class="terminal-titlebar">
-                    <span class="dot d-arch"></span><span class="dot d-fix"></span><span class="dot d-ok"></span>
-                    <span class="filename">~/proxima-missao</span>
-                </div>
-                <div class="terminal-body">
-                    <p class="term-line"><span class="term-prompt">$</span> cat proxima_missao.md</p>
-                    <p class="term-output">Reorganizem um projeto já existente (Pokédex, Biblioteca ou HabitTracker) nas quatro camadas. É a mesma estrutura que vocês vão usar no Projeto Final — tratem esta atividade como o ensaio geral.</p>
-                    <p class="term-line"><span class="term-prompt">$</span></p>
-                    <a class="term-cta" href="Atividade_Arquitetura_Pacotes.pdf" download>./baixar-atividade.pdf ↵</a>
-                    <p class="cta-meta">O PDF contém a missão completa, os requisitos obrigatórios e a rubrica de correção.</p>
                 </div>
             </div>
         </section>
